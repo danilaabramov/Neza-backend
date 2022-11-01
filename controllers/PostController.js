@@ -46,7 +46,6 @@ export const getAll = async (req, res) => {
 export const getAllLimit = async (req, res) => {
     try {
         const posts = await PostModel.find( { createdAt : { $lte : req.params.date === "0" ? "3000-07-30T11:32:55.326+00:00" : req.params.date}} ).populate('user').sort({_id:-1}).limit(req.params.length !== "0" ? 10 : 11).skip(req.params.length !== "0" ? 1 + req.params.length * 10 : 0).exec()
-
         res.json(posts)
     } catch (err) {
         console.log(err)
