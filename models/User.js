@@ -14,7 +14,11 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    avatarUrl: String
+    avatarUrl: String,
+    balance: {
+        type: Array,
+        default: [10000, 0]
+    }
 }, {
     timestamps: true
 })

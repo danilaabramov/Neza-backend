@@ -68,9 +68,10 @@ app.post('/images', ImageController.create)
 
 
 app.get('/stocks/:symbol', StocksController.getTimeSeries)
-
 app.get('/stocks/get/:symbol', StocksController.getStock)
+
 app.post('/stocks', StocksController.postStock)
+app.get('/stocks', StocksController.getAll)
 
 app.listen(process.env.PORT || 4444, (err) => {
     if (err) return console.log(err)
