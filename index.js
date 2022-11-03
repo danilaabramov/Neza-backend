@@ -73,6 +73,8 @@ app.get('/stocks/get/:symbol', StocksController.getStock)
 app.post('/stocks', StocksController.postStock)
 app.get('/stocks', StocksController.getAll)
 
+app.post('/stocks/buy', checkAuth, StocksController.buyStock)
+
 app.listen(process.env.PORT || 4444, (err) => {
     if (err) return console.log(err)
     console.log('Server OK')
