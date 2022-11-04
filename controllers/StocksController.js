@@ -187,15 +187,14 @@ export const buyStocks = async (req, res) => {
     }
 }
 
-const spliceStock = (Arr, s) => {
+const spliceStock = (Arr, s, quantity) => {
     let arr = JSON.parse(JSON.stringify(Arr))
     for(let i = 0; i < arr.length; ++i) {
         if(arr[i].symbol === s) {
-            arr.splice(i, 1)
+            arr[i].quantity -= quantity
             break
         }
     }
-    console.log(arr)
     return arr
 }
 
@@ -235,11 +234,11 @@ export const sellStocks = async (req, res) => {
                                 message: 'Акция не найдена'
                             })
                         }
-                        console.log(Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity)
+                        //console.log(Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity)
 
                         UserModel.findByIdAndUpdate(req.userId,
                             {
-                                stocks: spliceStock(user.stocks, req.body.symbol),
+                                stocks: spliceStock(user.stocks, req.body.symbol, req.body.quantity),
                                 $inc: {
                                     stocksBalance: -Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,
                                     currencyBalance: Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,

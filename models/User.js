@@ -7,14 +7,20 @@ const UserSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: true
+    },
+    number: {
+        type: String,
+        required: true
     },
     passwordHash: {
         type: String,
         required: true
     },
-    avatarUrl: String,
+    avatarUrl: {
+        type: String,
+        default: 'https://cdn.discordapp.com/attachments/803259316420214796/1038238060007145553/depositphotos_119670466-stock-illustration-user-icon-vector-male-person.webp'
+    },
     currencyBalance: {
         type: Number,
         default: 10000

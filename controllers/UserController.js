@@ -10,9 +10,9 @@ export const register = async (req, res) => {
         const hash = await bcrypt.hash(password, salt);
 
         const doc = new UserModel({
-            email: req.body.email,
+            number: req.body.number,
             fullName: req.body.fullName,
-            avatarUrl: req.body.avatarUrl,
+            email: req.body.email,
             passwordHash: hash,
         });
 
@@ -44,7 +44,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const user = await UserModel.findOne({ email: req.body.email });
+        const user = await UserModel.findOne({ number: req.body.number });
         if (!user) {
             return res.status(404).json({
                 message: 'Пользователь не найден',
@@ -85,7 +85,7 @@ export const login = async (req, res) => {
 
 export const loginCheck = async (req, res) => {
     try {
-        const user = await UserModel.findOne({ email: req.body.email });
+        const user = await UserModel.findOne({ number: req.body.number });
         if (!user) {
             return res.status(404).json({
                 message: 'Пользователь не найден',
