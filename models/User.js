@@ -21,6 +21,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'https://cdn.discordapp.com/attachments/803259316420214796/1038238060007145553/depositphotos_119670466-stock-illustration-user-icon-vector-male-person.webp'
     },
+    interest: String,
     currencyBalance: {
         type: Number,
         default: 10000
