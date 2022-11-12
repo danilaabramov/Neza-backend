@@ -25,6 +25,10 @@ const StockPortfolioSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    volute: {
+        type: String,
+        required: true,
+    }
 }, {
     timestamps: true,
 })

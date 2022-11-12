@@ -144,6 +144,7 @@ export const buyStocks = async (req, res) => {
             quantity: req.body.quantity,
             status: 'buy',
             user: req.userId,
+            volute: req.body.volute
         })
 
         StockPortfolioModel.findOneAndUpdate({
@@ -173,6 +174,7 @@ export const buyStocks = async (req, res) => {
                         totalCost: req.body.totalCost,
                         quantity: req.body.quantity,
                         user: req.userId,
+                        volute: req.body.volute
                     })
                 }
 
@@ -225,6 +227,7 @@ export const sellStocks = async (req, res) => {
             quantity: req.body.quantity,
             status: 'sell',
             user: req.userId,
+            volute: req.body.volute
         })
 
 
@@ -255,6 +258,7 @@ export const sellStocks = async (req, res) => {
                         totalCost: req.body.totalCost,
                         quantity: req.body.quantity,
                         user: req.userId,
+                        volute: req.body.volute
                     })
                 }
 

@@ -26,6 +26,10 @@ const StockHistorySchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
+    },
+    volute: {
+        type: String,
+        required: true,
     }
 }, {
     timestamps: true,
