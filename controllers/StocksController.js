@@ -1,14 +1,19 @@
 import request from 'request';
 import StockModel from "../models/Stock.js";
+import StockHistoryModel from "../models/StockHistory.js";
 import UserModel from "../models/User.js";
+import StockPortfolioModel from "../models/StockPortfolio.js";
 
 import {arrayFromLength} from "./helpers/common.js";
-import {getPageContent} from  './helpers/puppeteer.js'
+import {getPageContent} from './helpers/puppeteer.js'
 
 import cheerio from 'cheerio'
 import chalk from 'chalk'
 import {slugify} from 'transliteration'
 import PostModel from "../models/Post.js";
+import mongoose from "mongoose";
+import StockHistorySchema from "../models/StockHistory.js";
+import StocksPortfolio from "../models/StockPortfolio.js";
 
 const SITE = 'https://auto.ru/catalog/cars/all/?page_num='
 const pages = 2
@@ -46,7 +51,7 @@ const getTimes = (data) => {
 
 const getArray = (data) => {
     let arr = []
-    for(let i = 0; i < Object.keys(data).length; ++i)
+    for (let i = 0; i < Object.keys(data).length; ++i)
         arr.push({
             time: Object.keys(data)[i],
             price: data[Object.keys(data)[i]]['4. close']
@@ -130,11 +135,29 @@ export const postStock = async (req, res) => {
 
 export const buyStocks = async (req, res) => {
     try {
-        StockModel.findOne(
-            {
-                symbol: req.body.symbol,
+        const doc1 = new StockHistoryModel({
+            name: req.body.shortName,
+            shortName: req.body.shortName,
+            boardId: req.body.boardId,
+            imageUrl: req.body.imageUrl,
+            totalCost: req.body.totalCost,
+            quantity: req.body.quantity,
+            status: 'buy',
+            user: req.userId,
+        })
+
+        StockPortfolioModel.findOneAndUpdate({
+                shortName: req.body.shortName
             },
-             (err, doc) => {
+            {
+                $inc: {
+                    totalCost: req.body.totalCost,
+                    quantity: req.body.quantity,
+                }
+            },
+            {
+                returnDocument: 'after'
+            }, async (err, doc2) => {
                 if (err) {
                     console.log(err)
                     return res.status(500).json({
@@ -142,84 +165,26 @@ export const buyStocks = async (req, res) => {
                     })
                 }
 
-                if (!doc) {
-                    return res.status(404).json({
-                        message: 'Акция не найдена'
+                if (!doc2) {
+                    doc2 = new StockPortfolioModel({
+                        shortName: req.body.shortName,
+                        boardId: req.body.boardId,
+                        imageUrl: req.body.imageUrl,
+                        totalCost: req.body.totalCost,
+                        quantity: req.body.quantity,
+                        user: req.userId,
                     })
                 }
-                 UserModel.findByIdAndUpdate(req.userId, {
-                         $push: {
-                             stocks: {
-                                     symbol: req.body.symbol,
-                                     quantity: Number(req.body.quantity)
-                                 }
-                         },
-                         $inc: {
-                             stocksBalance: Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,
-                             currencyBalance: -Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,
-                         }
-                     },
-                     {returnDocument: 'after'},
-                     (err, doc) => {
-                         if (err) {
-                             console.log(err)
-                             return res.status(500).json({
-                                 message: 'Не удалось вернуть акцию'
-                             })
-                         }
 
-                         if (!doc) {
-                             return res.status(404).json({
-                                 message: 'Акция не найдена'
-                             })
-                         }
-
-                         res.json(doc)
-                     }
-                 )
-            }
-        )
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({
-            message: 'Не удалось создать акцию'
-        })
-    }
-}
-
-const spliceStock = (Arr, s, quantity) => {
-    let arr = JSON.parse(JSON.stringify(Arr))
-    for(let i = 0; i < arr.length; ++i) {
-        if(arr[i].symbol === s) {
-            arr[i].quantity -= quantity
-            break
-        }
-    }
-    return arr
-}
-
-export const sellStocks = async (req, res) => {
-    UserModel.findByIdAndUpdate(req.userId, {}, {
-        returnDocument: 'after'
-    },
-        (err, user) => {
-            if (err) {
-                console.log(err)
-                return res.status(500).json({
-                    message: 'Не удалось вернуть акцию'
-                })
-            }
-
-            if (!user) {
-                return res.status(404).json({
-                    message: 'Акция не найдена'
-                })
-            }
-
-            try {
-                StockModel.findOne(
+                UserModel.findByIdAndUpdate(req.userId,
                     {
-                        symbol: req.body.symbol,
+                        $inc: {
+                            stocksBalance: req.body.totalCost,
+                            currencyBalance: -req.body.totalCost,
+                        }
+                    },
+                    {
+                        returnDocument: 'after'
                     },
                     (err, doc) => {
                         if (err) {
@@ -234,133 +199,102 @@ export const sellStocks = async (req, res) => {
                                 message: 'Акция не найдена'
                             })
                         }
-                        //console.log(Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity)
-
-                        UserModel.findByIdAndUpdate(req.userId,
-                            {
-                                stocks: spliceStock(user.stocks, req.body.symbol, req.body.quantity),
-                                $inc: {
-                                    stocksBalance: -Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,
-                                    currencyBalance: Number(JSON.parse(doc.timeSeries)[0].price) * req.body.quantity,
-                                }
-                            },
-                            {
-                                returnDocument: 'after'
-                            },
-                            (err, doc) => {
-                                if (err) {
-                                    console.log(err)
-                                    return res.status(500).json({
-                                        message: 'Не удалось вернуть акцию'
-                                    })
-                                }
-
-                                if (!doc) {
-                                    return res.status(404).json({
-                                        message: 'Акция не найдена'
-                                    })
-                                }
-
-                                res.json(doc)
-                            }
-                        )
                     }
                 )
 
+                await doc1.save()
+                const portfolio = await doc2.save()
+                res.json(portfolio)
+            })
 
-            } catch (err) {
-                console.log(err)
-                res.status(500).json({
-                    message: 'Не удалось создать акцию'
-                })
-            }
-        });
-
-
-
-
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Не удалось создать историю'
+        })
+    }
 }
 
+export const sellStocks = async (req, res) => {
+    try {
+        const doc1 = new StockHistoryModel({
+            shortName: req.body.shortName,
+            boardId: req.body.boardId,
+            imageUrl: req.body.imageUrl,
+            totalCost: req.body.totalCost,
+            quantity: req.body.quantity,
+            status: 'sell',
+            user: req.userId,
+        })
 
-// export const getStock = async (req, res) => {
-//     StockModel.findOne(
-//         {
-//             symbol: req.params.symbol,
-//         },
-//         (err, doc) => {
-//             if (err) {
-//                 console.log(err)
-//                 return res.status(500).json({
-//                     message: 'Не удалось вернуть акцию'
-//                 })
-//             }
-//
-//             if (!doc) {
-//                 return res.status(404).json({
-//                     message: 'Акция не найдена'
-//                 })
-//             }
-//
-//             let arr = []
-//             try {
-//                 //const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=1min&slice=year1month1&apikey=Y2Z7X4GZJN286RCZ`;
-//                 const url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=AAPL&apikey=Y2Z7X4GZJN286RCZ'
-//                 request.get({
-//                     url: url,
-//                     json: true,
-//                     headers: {'User-Agent': 'request'}
-//                 }, (err, ress, data) => {
-//                     if (err) {
-//                         console.log('Error:', err);
-//                     } else if (ress.statusCode !== 200) {
-//                         console.log('Status:', ress.statusCode);
-//                     } else {
-//                         if (getTimes(data) === -1)
-//                             res.status(500).json({
-//                                 message: 'Не удалось получить акцию'
-//                             })
-//                         else {
-//                             arr = getTimes(data)
-//                             const url = 'https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=AAPL&apikey=Y2Z7X4GZJN286RCZ'
-//                             request.get({
-//                                 url: url,
-//                                 json: true,
-//                                 headers: {'User-Agent': 'request'}
-//                             }, (err, ress, data) => {
-//                                 if (err) {
-//                                     console.log('Error:', err);
-//                                 } else if (ress.statusCode !== 200) {
-//                                     console.log('Status:', ress.statusCode);
-//                                 } else {
-//                                     if (getTimes(data) === -1)
-//                                         res.status(500).json({
-//                                             message: 'Не удалось получить акцию'
-//                                         })
-//                                     else {
-//                                         arr = {...arr, ...getTimes(data)}
-//                                         console.log(doc)
-//                                         res.json({
-//                                             name: doc.name,
-//                                             symbol: doc.symbol,
-//                                             imageUrl: doc.imageUrl,
-//                                             timeSeries: getArray(arr)
-//                                     })
-//                                     }
-//                                 }
-//                             });
-//                         }
-//                     }
-//                 });
-//             } catch (err) {
-//                 console.log(err)
-//                 res.status(500).json({
-//                     message: 'Не удалось получить акцию'
-//                 })
-//             }
-//         }
-//     )
-//
-// }
+
+        StockPortfolioModel.findOneAndUpdate({
+                shortName: req.body.shortName
+            },
+            {
+                $inc: {
+                    totalCost: -req.body.totalCost,
+                    quantity: -req.body.quantity,
+                }
+            },
+            {
+                returnDocument: 'after'
+            }, async (err, doc2) => {
+                if (err) {
+                    console.log(err)
+                    return res.status(500).json({
+                        message: 'Не удалось вернуть акцию'
+                    })
+                }
+
+                if (!doc2) {
+                    doc2 = new StockPortfolioModel({
+                        shortName: req.body.shortName,
+                        boardId: req.body.boardId,
+                        imageUrl: req.body.imageUrl,
+                        totalCost: req.body.totalCost,
+                        quantity: req.body.quantity,
+                        user: req.userId,
+                    })
+                }
+
+                UserModel.findByIdAndUpdate(req.userId,
+                    {
+                        $inc: {
+                            stocksBalance: -req.body.totalCost,
+                            currencyBalance: req.body.totalCost,
+                        }
+                    },
+                    {
+                        returnDocument: 'after'
+                    },
+                    (err, doc) => {
+                        if (err) {
+                            console.log(err)
+                            return res.status(500).json({
+                                message: 'Не удалось вернуть акцию'
+                            })
+                        }
+
+                        if (!doc) {
+                            return res.status(404).json({
+                                message: 'Акция не найдена'
+                            })
+                        }
+                    }
+                )
+                await doc1.save()
+                const portfolio = await doc2.save()
+                res.json(portfolio)
+            })
+
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Не удалось создать историю'
+        })
+    }
+}
 
 
 export const getStock = async (req, res) => {
@@ -400,3 +334,14 @@ export const getAll = async (req, res) => {
     }
 }
 
+export const getStocksPortfolio = async (req, res) => {
+    try {
+        const stocks = await StockPortfolioModel.find({user: req.userId})
+        res.json(stocks)
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            message: 'Не удалось получить акции'
+        })
+    }
+}
