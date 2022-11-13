@@ -3,6 +3,7 @@ import StockModel from "../models/Stock.js";
 import StockHistoryModel from "../models/StockHistory.js";
 import UserModel from "../models/User.js";
 import StockPortfolioModel from "../models/StockPortfolio.js";
+import {investing} from "investing-com-api";
 
 import {arrayFromLength} from "./helpers/common.js";
 import {getPageContent} from './helpers/puppeteer.js'
@@ -349,5 +350,17 @@ export const getStocksPortfolio = async (req, res) => {
         res.status(500).json({
             message: 'Не удалось получить акции'
         })
+    }
+}
+
+export const getStockss= async (req, res) => {
+    try {
+        const response1 = await investing('currencies/eur-usd'); // Providing a valid mapping.js key
+        // const response2 = await investing('currencies/eur-usd', 'P1M', 'P1D'); // With optional params
+        // const response3 = await investing('1'); // Providing the pairId directly, even if not present in mapping.js
+
+        res.json(response1)
+    } catch (err) {
+        console.error(err);
     }
 }
