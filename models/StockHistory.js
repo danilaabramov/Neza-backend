@@ -27,7 +27,7 @@ const StockHistorySchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    volute: {
+    currency: {
         type: String,
         required: true,
     }

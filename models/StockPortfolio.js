@@ -23,7 +23,7 @@ const StockPortfolioSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    volute: {
+    currency: {
         type: String,
         required: true,
     }
