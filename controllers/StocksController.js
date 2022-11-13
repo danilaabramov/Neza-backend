@@ -146,9 +146,10 @@ export const buyStocks = async (req, res) => {
             user: req.userId,
             volute: req.body.volute
         })
-
+        console.log(req.userId)
         StockPortfolioModel.findOneAndUpdate({
-                shortName: req.body.shortName
+                shortName: req.body.shortName,
+                user: req.userId
             },
             {
                 $inc: {

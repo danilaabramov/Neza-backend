@@ -4,12 +4,10 @@ const StockPortfolioSchema = new mongoose.Schema({
     shortName: {
         type: String,
         required: true,
-        unique: true
     },
     boardId:{
         type: String,
         required: true,
-        unique: true
     },
     imageUrl: String,
     user: {
