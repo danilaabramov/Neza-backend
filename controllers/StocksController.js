@@ -233,7 +233,8 @@ export const sellStocks = async (req, res) => {
 
 
         StockPortfolioModel.findOneAndUpdate({
-                shortName: req.body.shortName
+                shortName: req.body.shortName,
+                user: req.userId
             },
             {
                 $inc: {
