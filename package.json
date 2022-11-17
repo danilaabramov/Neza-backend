@@ -29,6 +29,7 @@
     "puppeteer": "^19.2.1",
     "puppeteer-core": "^19.2.1",
     "request": "^2.88.2",
-    "transliteration": "^2.3.5"
+    "transliteration": "^2.3.5",
+    "yahoo-finance": "^0.3.7"
   }
 }

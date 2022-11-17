@@ -3,7 +3,7 @@ import StockModel from "../models/Stock.js";
 import StockHistoryModel from "../models/StockHistory.js";
 import UserModel from "../models/User.js";
 import StockPortfolioModel from "../models/StockPortfolio.js";
-//import {investing} from "investing-com-api";
+import yahooFinance from "yahoo-finance";
 
 import {arrayFromLength} from "./helpers/common.js";
 import {getPageContent} from './helpers/puppeteer.js'
@@ -51,62 +51,69 @@ const getTimes = (data) => {
 }
 
 const getArray = (data) => {
-    let arr = []
-    for (let i = 0; i < Object.keys(data).length; ++i)
+    let arr = [];
+    for (let i = 0; i < data.length; ++i)
         arr.push({
-            time: Object.keys(data)[i],
-            price: data[Object.keys(data)[i]]['4. close']
-        })
-    return arr
-}
-
+            time: data[i].date,
+            price: data[i].close,
+        });
+    return arr;
+};
 
 export const getTimeSeries = async (req, res) => {
-    let arr = []
+
     try {
-        //const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=1min&slice=year1month1&apikey=Y2Z7X4GZJN286RCZ`;
-        const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
-        request.get({
-            url: url,
-            json: true,
-            headers: {'User-Agent': 'request'}
-        }, (err, ress, data) => {
-            if (err) {
-                console.log('Error:', err);
-            } else if (ress.statusCode !== 200) {
-                console.log('Status:', ress.statusCode);
-            } else {
-                if (getTimes(data) === -1)
-                    res.status(500).json({
-                        message: 'Не удалось получить акцию'
-                    })
-                else {
-                    arr = getTimes(data)
-                    // const url = `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
-                    // request.get({
-                    //     url: url,
-                    //     json: true,
-                    //     headers: {'User-Agent': 'request'}
-                    // }, (err, ress, data) => {
-                    //     if (err) {
-                    //         console.log('Error:', err);
-                    //     } else if (ress.statusCode !== 200) {
-                    //         console.log('Status:', ress.statusCode);
-                    //     } else {
-                    //         if (getTimes(data) === -1)
-                    //             res.status(500).json({
-                    //                 message: 'Не удалось получить акцию'
-                    //             })
-                    //         else {
-                    //             arr = {...arr, ...getTimes(data)}
-                    //             res.json(arr)
-                    //         }
-                    //     }
-                    // });
-                    res.json(arr)
-                }
-            }
-        });
+        yahooFinance.historical({
+            symbol: req.params.symbol,
+            from: (new Date().getFullYear() - 1) + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+            to: new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+        }, function (err, quotes) {
+            console.log(getArray(quotes))
+            res.json(getArray(quotes))
+        })
+        //     //const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=1min&slice=year1month1&apikey=Y2Z7X4GZJN286RCZ`;
+        // const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
+        // request.get({
+        //     url: url,
+        //     json: true,
+        //     headers: {'User-Agent': 'request'}
+        // }, (err, ress, data) => {
+        //     if (err) {
+        //         console.log('Error:', err);
+        //     } else if (ress.statusCode !== 200) {
+        //         console.log('Status:', ress.statusCode);
+        //     } else {
+        //         if (getTimes(data) === -1)
+        //             res.status(500).json({
+        //                 message: 'Не удалось получить акцию'
+        //             })
+        //         else {
+        //             arr = getTimes(data)
+        //             // const url = `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
+        //             // request.get({
+        //             //     url: url,
+        //             //     json: true,
+        //             //     headers: {'User-Agent': 'request'}
+        //             // }, (err, ress, data) => {
+        //             //     if (err) {
+        //             //         console.log('Error:', err);
+        //             //     } else if (ress.statusCode !== 200) {
+        //             //         console.log('Status:', ress.statusCode);
+        //             //     } else {
+        //             //         if (getTimes(data) === -1)
+        //             //             res.status(500).json({
+        //             //                 message: 'Не удалось получить акцию'
+        //             //             })
+        //             //         else {
+        //             //             arr = {...arr, ...getTimes(data)}
+        //             //             res.json(arr)
+        //             //         }
+        //             //     }
+        //             // });
+        //             res.json(arr)
+        //         }
+        //     }
+        // });
     } catch (err) {
         console.log(err)
         res.status(500).json({
@@ -302,29 +309,55 @@ export const sellStocks = async (req, res) => {
     }
 }
 
-
 export const getStock = async (req, res) => {
-    StockModel.findOne(
-        {
-            symbol: req.params.symbol,
-        },
-        (err, doc) => {
-            if (err) {
-                console.log(err)
-                return res.status(500).json({
-                    message: 'Не удалось вернуть акцию'
-                })
-            }
 
-            if (!doc) {
-                return res.status(404).json({
-                    message: 'Акция не найдена'
-                })
-            }
 
-            res.json(doc)
-        }
-    )
+            StockModel.findOne(
+                {
+                    symbol: req.params.symbol,
+                },
+                (err, doc) => {
+                    if (err) {
+                        console.log(err)
+                        return res.status(500).json({
+                            message: 'Не удалось вернуть акцию'
+                        })
+                    }
+
+                    if (!doc) {
+                        return res.status(404).json({
+                            message: 'Акция не найдена'
+                        })
+                    }
+
+                    res.json(
+                        doc
+                    )
+                }
+            )
+
+            // const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
+            // request.get({
+            //     url: url,
+            //     json: true,
+            //     headers: {'User-Agent': 'request'}
+            // }, (err, ress, data) => {
+            //     if (err) {
+            //         console.log('Error:', err);
+            //     } else if (ress.statusCode !== 200) {
+            //         console.log('Status:', ress.statusCode);
+            //     } else {
+            //         if (getTimes(data) === -1)
+            //             res.status(500).json({
+            //                 message: 'Не удалось получить акцию'
+            //             })
+            //         else {
+            //             res.json(data)
+            //         }
+            //     }
+            // });
+
+
 }
 
 export const getAll = async (req, res) => {
@@ -352,14 +385,19 @@ export const getStocksPortfolio = async (req, res) => {
     }
 }
 
-// export const getStockss= async (req, res) => {
-//     try {
-//         const response1 = await investing('currencies/eur-usd'); // Providing a valid mapping.js key
-//         // const response2 = await investing('currencies/eur-usd', 'P1M', 'P1D'); // With optional params
-//         // const response3 = await investing('1'); // Providing the pairId directly, even if not present in mapping.js
-//
-//         res.json(response1)
-//     } catch (err) {
-//         console.error(err);
-//     }
-// }
+export const getStockss = async (req, res) => {
+    try {
+        yahooFinance.historical({
+            symbols: ['A', 'AAL', 'AAP', 'AAPL', 'ABBV', 'ABC', 'ABMD', 'ABT', 'ACGL', 'ACN'],
+            from: (new Date().getFullYear() - 1) + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+            to: new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+            // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
+        }, function (err, quotes) {
+            res.json(quotes)
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+

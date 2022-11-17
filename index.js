@@ -74,7 +74,7 @@ app.get('/stocks/get/:symbol', StocksController.getStock)
 
 app.post('/stocks', StocksController.postStock)
 app.get('/stocks', StocksController.getAll)
-//app.get('/stockss', StocksController.getStockss)
+app.get('/stockss', StocksController.getStockss)
 
 app.get('/stocks-portfolio', checkAuth, StocksController.getStocksPortfolio)
 

@@ -15,11 +15,7 @@ const StockSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
-    },
-    timeSeries: {
-        type: String,
-        required: true,
-    },
+    }
 }, {
     timestamps: true,
 })
