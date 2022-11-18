@@ -63,14 +63,15 @@ const getArray = (data) => {
 export const getTimeSeries = async (req, res) => {
 
     try {
+        console.log(new Date().getFullYear() + '-' + (Number(new Date().getMonth())) + '-' + (new Date().getDate()))
         yahooFinance.historical({
             symbol: req.params.symbol,
             from: (new Date().getFullYear() - 1) + '-' + new Date().getMonth() + '-' + new Date().getDate(),
             to: new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+            // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
         }, function (err, quotes) {
-            console.log(getArray(quotes))
-            res.json(getArray(quotes))
-        })
+            res.json(quotes)
+        });
         //     //const url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=1min&slice=year1month1&apikey=Y2Z7X4GZJN286RCZ`;
         // const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${req.params.symbol}&apikey=Y2Z7X4GZJN286RCZ`
         // request.get({
@@ -389,7 +390,7 @@ export const getStockss = async (req, res) => {
     try {
         yahooFinance.historical({
             symbols: ['A', 'AAL', 'AAP', 'AAPL', 'ABBV', 'ABC', 'ABMD', 'ABT', 'ACGL', 'ACN'],
-            from: (new Date().getFullYear() - 1) + '-' + new Date().getMonth() + '-' + new Date().getDate(),
+            from: new Date().getFullYear() + '-' + (new Date().getMonth()) + '-' + (new Date().getDate()),
             to: new Date().getFullYear() + '-' + new Date().getMonth() + '-' + new Date().getDate(),
             // period: 'd'  // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
         }, function (err, quotes) {
